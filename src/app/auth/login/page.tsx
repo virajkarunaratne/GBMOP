@@ -4,7 +4,7 @@ import React, { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { Mail, Lock, AlertCircle } from 'lucide-react'
-import { useAuth } from '@/contexts/AuthContext'
+import { DEMO_ACCOUNTS, useAuth } from '@/contexts/AuthContext'
 import { Button } from '@/components/Button'
 import { Card } from '@/components/Card'
 import { Input } from '@/components/Form'
@@ -152,6 +152,29 @@ export default function LoginPage() {
                 Sign In
               </Button>
             </form>
+
+            <div className="mt-6 rounded-xl border border-dashed border-primary-200 bg-primary-50/70 p-4">
+              <p className="text-sm font-semibold text-primary-700">Sample demo accounts</p>
+              <div className="mt-3 space-y-2">
+                {DEMO_ACCOUNTS.map((account) => (
+                  <button
+                    key={account.email}
+                    type="button"
+                    onClick={() => setFormData({ email: account.email, password: account.password })}
+                    className="w-full rounded-lg border border-primary-100 bg-white p-3 text-left shadow-sm transition hover:border-primary-300 hover:shadow"
+                  >
+                    <div className="flex items-center justify-between gap-3">
+                      <div>
+                        <p className="text-sm font-semibold text-neutral-900">{account.name}</p>
+                        <p className="text-xs text-neutral-600">{account.email}</p>
+                      </div>
+                      <span className="text-xs font-medium text-primary-700">Use</span>
+                    </div>
+                    <p className="mt-2 text-xs text-neutral-600">Password: {account.password}</p>
+                  </button>
+                ))}
+              </div>
+            </div>
 
             <div className="mt-6 pt-6 border-t border-neutral-200">
               <p className="text-center text-neutral-600 text-sm">

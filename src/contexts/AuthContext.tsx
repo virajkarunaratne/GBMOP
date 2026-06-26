@@ -23,6 +23,72 @@ interface AuthContextType {
   resetError: () => void
 }
 
+interface DemoAccount {
+  name: string
+  email: string
+  password: string
+  roleName: string
+  description: string
+}
+
+export const DEMO_ACCOUNTS: DemoAccount[] = [
+  {
+    name: 'Admin User',
+    email: 'admin@gmop.demo',
+    password: 'abc123',
+    roleName: 'Administrator',
+    description: 'Full platform access',
+  },
+  {
+    name: 'Marketing Manager',
+    email: 'manager@gmop.demo',
+    password: 'abc123',
+    roleName: 'Marketing Manager',
+    description: 'Project and content oversight',
+  },
+  {
+    name: 'Sales Executive',
+    email: 'sales@gmop.demo',
+    password: 'abc123',
+    roleName: 'Sales Executive',
+    description: 'Client and opportunity workflow',
+  },
+  {
+    name: 'Client User',
+    email: 'client@gmop.demo',
+    password: 'abc123',
+    roleName: 'Client',
+    description: 'Client-facing access',
+  },
+  {
+    name: 'Team Viewer',
+    email: 'viewer@gmop.demo',
+    password: 'abc123',
+    roleName: 'Viewer',
+    description: 'Read-only overview access',
+  },
+]
+
+const DEMO_SESSION_KEY = 'gmop-demo-session'
+
+const createDemoUser = (account: DemoAccount): User => ({
+  id: `demo-${account.roleName.toLowerCase().replace(/\s+/g, '-')}`,
+  email: account.email,
+  full_name: account.name,
+  role_id: `demo-${account.roleName.toLowerCase().replace(/\s+/g, '-')}`,
+  is_active: true,
+  created_at: new Date().toISOString(),
+  updated_at: new Date().toISOString(),
+  role: {
+    id: `demo-role-${account.roleName.toLowerCase().replace(/\s+/g, '-')}`,
+    name: account.roleName,
+    description: account.description,
+    permissions: {},
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+  },
+})
+
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
@@ -37,6 +103,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   useEffect(() => {
     const initializeAuth = async () => {
       try {
+        const savedDemoSession = window.localStorage.getItem(DEMO_SESSION_KEY)
+        if (savedDemoSession) {
+          const parsedSession = JSON.parse(savedDemoSession) as User
+          setUser(parsedSession)
+          setLoading(false)
+          return
+        }
+
         const {
           data: { session },
         } = await supabase.auth.getSession()
@@ -104,6 +178,20 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       setError(null)
       setLoading(true)
 
+      const matchedDemoAccount = DEMO_ACCOUNTS.find(
+        (account) =>
+          account.email.toLowerCase() === email.trim().toLowerCase() &&
+          account.password === password
+      )
+
+      if (matchedDemoAccount) {
+        const demoUser = createDemoUser(matchedDemoAccount)
+        setUser(demoUser)
+        setSession({ demo: true, user: demoUser })
+        window.localStorage.setItem(DEMO_SESSION_KEY, JSON.stringify(demoUser))
+        return
+      }
+
       const { error: signInError } = await supabase.auth.signInWithPassword({
         email,
         password,
@@ -164,6 +252,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   const logout = async () => {
     try {
       setError(null)
+      window.localStorage.removeItem(DEMO_SESSION_KEY)
       const { error } = await supabase.auth.signOut()
       if (error) throw error
       setUser(null)
